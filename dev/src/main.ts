@@ -1,5 +1,10 @@
-import { createBoard } from '../../src/chesslike-board';
+import { createBoard, createView } from '../../src/chesslike-board';
+
+const app = document.getElementById('app') || document.body;
 
 const board = createBoard();
-
-console.log(board);
+const view = createView(board);
+const wrapper = document.createElement('div');
+wrapper.style.maxWidth = '50vh';
+wrapper.append(view.elements.board);
+app.append(wrapper);
