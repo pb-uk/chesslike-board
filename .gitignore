@@ -1,3 +1,6 @@
+# Build/test files
+coverage
+
 # Logs
 logs
 *.log

@@ -27,6 +27,7 @@ export default defineConfig({
 		include: ['{src,test}/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
 		globals: true,
 		coverage: {
+			provider: 'v8',
 			include: ['src'],
 		},
 	},
