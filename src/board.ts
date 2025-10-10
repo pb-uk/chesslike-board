@@ -1,8 +1,3 @@
-/** A single square/cell on a board. */
-export interface Square {
-	label: string;
-}
-
 /** An n x m board. */
 export interface Board {
 	/** Number of columns. */
@@ -11,7 +6,7 @@ export interface Board {
 	rows: number;
 	/**
 	 * The contents of the board.
-	 * 
+	 *
 	 * This is stored as a 1D array in row major order, starting top left.
 	 */
 	squares: Square[];
@@ -21,6 +16,11 @@ export interface Board {
 	rowLabels: string[];
 }
 
+/** A single square/cell on a board. */
+export interface Square {
+	label: string;
+}
+
 /** Options for createBoard(). */
 export interface CreateBoardOptions {
 	/** Number of columns. */
@@ -28,40 +28,6 @@ export interface CreateBoardOptions {
 	/** Number of rows. */
 	rows: number;
 }
-
-/** Generate labels for a board of unlimited size e.g. 'aa123'. */
-export const createLabels = (columns: number, rows: number): string[][] => {
-	// Labels for the columns.
-	// Checkpoint
-	const colLabels: string[] = new Array(columns);
-	for (let col = 0; col < columns; col++) {
-		let label = String.fromCharCode(97 + (col % 26));
-		// For more than 26 columns we need to continue with 'aa' etc.
-		let c = Math.floor(col / 26);
-		while (c > 0) {
-			const rem = (c - 1) % 26;
-			c = Math.floor((c - 1) / 26);
-			label = `${String.fromCharCode(97 + rem)}${label}`;
-		}
-		colLabels[col] = label;
-	}
-
-	// Labels for the rows.
-	const rowLabels: string[] = new Array(rows);
-	for (let row = 0; row < rows; row++) {
-		rowLabels[row] = `${rows - row}`;
-	}
-
-	// Labels for the squares.
-	const length = columns * rows;
-	const labels: string[] = new Array(length);
-	for (let i = 0; i < length; i++) {
-		labels[i] =
-			`${colLabels[i % columns]}${rowLabels[Math.floor(i / columns)]}`;
-	}
-
-	return [labels, colLabels, rowLabels];
-};
 
 /**
  * Create a board.
@@ -100,4 +66,38 @@ export const createBoard = (
 		colLabels,
 		rowLabels,
 	};
+};
+
+/** Generate labels for a board of unlimited size e.g. 'aa123'. */
+export const createLabels = (columns: number, rows: number): string[][] => {
+	// Labels for the columns.
+	// Checkpoint
+	const colLabels: string[] = new Array(columns);
+	for (let col = 0; col < columns; col++) {
+		let label = String.fromCharCode(97 + (col % 26));
+		// For more than 26 columns we need to continue with 'aa' etc.
+		let c = Math.floor(col / 26);
+		while (c > 0) {
+			const rem = (c - 1) % 26;
+			c = Math.floor((c - 1) / 26);
+			label = `${String.fromCharCode(97 + rem)}${label}`;
+		}
+		colLabels[col] = label;
+	}
+
+	// Labels for the rows.
+	const rowLabels: string[] = new Array(rows);
+	for (let row = 0; row < rows; row++) {
+		rowLabels[row] = `${rows - row}`;
+	}
+
+	// Labels for the squares.
+	const length = columns * rows;
+	const labels: string[] = new Array(length);
+	for (let i = 0; i < length; i++) {
+		labels[i] =
+			`${colLabels[i % columns]}${rowLabels[Math.floor(i / columns)]}`;
+	}
+
+	return [labels, colLabels, rowLabels];
 };
