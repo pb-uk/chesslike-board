@@ -1,0 +1,13 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"include": ["src/chesslike-board.ts"],
+	"compilerOptions": {
+		"declaration": true,
+		"rootDir": "src",
+		"emitDeclarationOnly": true,
+		"outFile": "./dist/chesslike-board.d.ts",
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"skipLibCheck": true
+	}
+}
