@@ -15,10 +15,11 @@ export interface View {
 
 export interface ViewElements {
 	board: SVGSVGElement;
-	border?: SVGElement;
-	edge?: SVGElement;
 	evenSquares: SVGElement;
 	oddSquares: SVGElement;
+	border?: SVGElement;
+	edge?: SVGElement;
+	borderLabels?: SVGElement;
 }
 
 export interface ViewDimensions {
@@ -51,6 +52,8 @@ export interface Theme {
 	borderText: string;
 	/** Colour for the edge/outline of the board. */
 	edge: string;
+	/** Font for labels. */
+	fontFamily: string;
 }
 
 export interface CreateViewOptions {
@@ -58,7 +61,7 @@ export interface CreateViewOptions {
 }
 
 const defaultBorderSizeFactor = 0.5;
-const defaultEdgeSizeFactor = 0.05;
+const defaultEdgeSizeFactor = 0.025;
 
 const defaultTheme: Theme = {
 	size: 40,
@@ -69,6 +72,7 @@ const defaultTheme: Theme = {
 	edge: '#b58862',
 	border: '#efd9b5',
 	borderText: '#b58862',
+	fontFamily: 'system-ui, sans-serif',
 };
 
 const defaults: CreateViewOptions = {
@@ -150,6 +154,9 @@ export const createView = (
 
 	elements.board.append(elements.edge);
 
+	elements.borderLabels = drawBorderLabels(board, theme, dimensions);
+	elements.board.append(elements.borderLabels);
+
 	return {
 		board,
 		theme,
@@ -164,7 +171,7 @@ const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
 	const { rows, columns } = board;
 
 	// Use the fancy method if we can, it is about a third of the size.
-	if (!(columns % 2 || rows % 2)) {
+	if (columns === rows && !(columns % 2)) {
 		return drawEvenCheck(board, theme, dimensions);
 	}
 
@@ -196,7 +203,7 @@ const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
 	return [evenSquares, oddSquares];
 };
 
-/** Draw the check pattern. */
+/** Draw the check pattern on an even square board. */
 const drawEvenCheck = (
 	board: Board,
 	theme: Theme,
@@ -247,4 +254,59 @@ const drawEvenCheck = (
 	const oddSquares = s('path', { fill: theme.board[1], d: parts.join('') });
 
 	return [evenSquares, oddSquares];
+};
+
+const drawBorderLabels = (
+	board: Board,
+	theme: Theme,
+	dimensions: ViewDimensions,
+) => {
+	const { columns, rows } = board;
+	const { bw, sq, vbh, vbw } = dimensions;
+
+	// const topLabels = s('g', { 'text-anchor': 'middle' });
+	// const bottomLabels = s('g', { 'text-anchor': 'middle' });
+	// const leftLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
+	// const rightLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
+	const align = {
+		'text-anchor': 'middle',
+		'dominant-baseline': 'middle',
+		fill: theme.borderText,
+	};
+	const topLabels = s('g', align);
+	const bottomLabels = s('g', align);
+	const leftLabels = s('g', align);
+	const rightLabels = s('g', align);
+
+	const yTop = bw * 0.5;
+	const yBottom = vbh - bw * 0.5;
+	for (let col = 0; col < columns; col++) {
+		const x = bw + sq * (col + 0.5);
+		let text = s('text', { x, y: yTop });
+		text.textContent = board.colLabels[col];
+		topLabels.append(text);
+		text = s('text', { x, y: yBottom });
+		text.textContent = board.colLabels[col];
+		bottomLabels.append(text);
+	}
+
+	const xLeft = bw * 0.5;
+	const xRight = vbw - bw * 0.5;
+	for (let row = 0; row < rows; row++) {
+		const y = bw + sq * (row + 0.5);
+		let text = s('text', { x: xLeft, y });
+		text.textContent = board.rowLabels[row];
+		leftLabels.append(text);
+		text = s('text', { x: xRight, y });
+		text.textContent = board.rowLabels[row];
+		rightLabels.append(text);
+	}
+
+	const g = s('g', {
+		'font-family': theme.fontFamily,
+		'font-size': bw * 0.625,
+	});
+	g.append(topLabels, rightLabels, bottomLabels, leftLabels);
+
+	return g;
 };
