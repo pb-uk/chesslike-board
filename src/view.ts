@@ -9,6 +9,8 @@ export interface View {
 	theme: Theme;
 	/** SVG elements making up the board. */
 	elements: ViewElements;
+	/** Board dimensions. */
+	dimensions: ViewDimensions;
 }
 
 export interface ViewElements {
@@ -17,6 +19,19 @@ export interface ViewElements {
 	edge?: SVGElement;
 	evenSquares: SVGElement;
 	oddSquares: SVGElement;
+}
+
+export interface ViewDimensions {
+	/** ViewBox width. */
+	vbw: number;
+	/** ViewBox height. */
+	vbh: number;
+	/** Border width. */
+	bw: number;
+	/** Edge width. */
+	ew: number;
+	/** Square size. */
+	sq: number;
 }
 
 export interface Theme {
@@ -38,7 +53,6 @@ export interface Theme {
 	edge: string;
 }
 
-
 export interface CreateViewOptions {
 	theme: Partial<Theme>;
 }
@@ -50,11 +64,11 @@ const defaultTheme: Theme = {
 	size: 40,
 	borderSize: true,
 	edgeSize: true,
-	board: ["#efd9b5", "#b58862", ],
-	text: ["#b58862", "#efd9b5", ],
-	edge: "#b58862",
-	border: "#efd9b5",
-	borderText: "#b58862",
+	board: ['#efd9b5', '#b58862'],
+	text: ['#b58862', '#efd9b5'],
+	edge: '#b58862',
+	border: '#efd9b5',
+	borderText: '#b58862',
 };
 
 const defaults: CreateViewOptions = {
@@ -78,20 +92,33 @@ export const createView = (
 		...options,
 	};
 
-	const theme = { ...defaultTheme, ...settings.theme }
-	const { size } = theme;
+	const theme = { ...defaultTheme, ...settings.theme };
+	const { size: sq } = theme;
 
 	const borderSize =
-		theme.borderSize === true ? size * defaultBorderSizeFactor
+		theme.borderSize === true ? sq * defaultBorderSizeFactor
 		: theme.borderSize ? theme.borderSize
 		: false;
 
 	const bw = borderSize || 0;
 
 	// Calculate the width of the board.
-	const vbw = board.columns * size + 2 * bw;
-	const vbh = board.rows * size + 2 * bw;
+	const vbw = board.columns * sq + 2 * bw;
+	const vbh = board.rows * sq + 2 * bw;
 	const viewBox = `0 0 ${vbw} ${vbh}`;
+	// Calculate an edge.
+	const edgeSize =
+		theme.edgeSize === true ? sq * defaultEdgeSizeFactor
+		: theme.edgeSize ? theme.edgeSize
+		: false;
+
+	const dimensions: ViewDimensions = {
+		vbw,
+		vbh,
+		bw,
+		ew: edgeSize || 0,
+		sq,
+	};
 
 	// The whole view lives inside an SVG element.
 	const elements: Partial<ViewElements> = {};
@@ -101,23 +128,24 @@ export const createView = (
 	// Add the border.
 	elements.border = s('path', {
 		fill: theme.border,
-		d: `M0,0H${vbw}V${vbh}H0ZM${bw},${bw}V${vbh-bw}H${vbw - bw}V${bw}H${bw}`,
+		d: `M0,0H${vbw}V${vbh}H0ZM${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}H${bw}`,
 	});
 
 	elements.board.append(elements.border);
 
-	// Calculate an edge.
-	const edgeSize =
-		theme.edgeSize === true ? size * defaultEdgeSizeFactor
-		: theme.edgeSize ? theme.edgeSize
-		: false;
+	// Add the squares.
+	const [evenSquares, oddSquares] = drawCheck(board, theme, dimensions);
+	elements.evenSquares = evenSquares;
+	elements.board.append(evenSquares);
+	elements.oddSquares = oddSquares;
+	elements.board.append(oddSquares);
 
 	// Add the edge.
 	elements.edge = s('path', {
 		stroke: theme.edge,
-		strokeWidth: edgeSize,
+		'stroke-width': dimensions.ew,
 		fill: 'none',
-		d: `M${bw},${bw}V${vbh-bw}H${vbw - bw}V${bw}H${bw}`,
+		d: `M${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}Z`,
 	});
 
 	elements.board.append(elements.edge);
@@ -125,7 +153,57 @@ export const createView = (
 	return {
 		board,
 		theme,
+		dimensions,
 		// We need to be sure we have set everything required.
 		elements: elements as ViewElements,
 	};
+};
+
+/** Draw the check pattern. */
+const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
+	const { vbw, vbh, bw, sq } = dimensions;
+
+	const xw = sq;
+	const yw = sq;
+
+	const w = vbw - bw;
+	const h = vbh - bw;
+
+	let parts: string[] = [];
+	let i;
+	let x = xw + bw;
+	let y = h - yw;
+	const repeat = Math.floor(board.columns / 2) - 1;
+	parts.push(`M${bw},${bw}H${x}V${h}`);
+	for (i = 0; i < repeat; i++) {
+		x = xw + bw + 2 * xw * (i + 1);
+		parts.push(`H${x - xw}V${bw}H${x}V${h}`);
+	}
+	parts.push(`H${w}V${y}H${bw}`);
+	for (i = 0; i < repeat; i++) {
+		y = h - yw - 2 * yw * (i + 1);
+		parts.push(`V${y + yw}H${w}V${y}H${bw}`);
+	}
+	parts.push(`V${bw}`);
+
+	// parts.push(`<path fill="${getColour(clrs[0], clrSet)}" d="M0,0H${x}V${h}`);
+	const evenSquares = s('path', { fill: theme.board[0], d: parts.join('') });
+	parts = [];
+
+	x = w - xw;
+	y = yw + bw;
+	parts.push(`M${w},${bw}H${x}V${h}`);
+	for (i = 0; i < repeat; i++) {
+		x = w - xw - 2 * xw * (i + 1);
+		parts.push(`H${x + xw}V${bw}H${x}V${h}`);
+	}
+	parts.push(`H${bw}V${y}H${w}`);
+	for (i = 0; i < repeat; i++) {
+		y = yw + bw + 2 * yw * (i + 1);
+		parts.push(`V${y - yw}H${bw}V${y}H${w}`);
+	}
+	parts.push(`V${bw}`);
+	const oddSquares = s('path', { fill: theme.board[1], d: parts.join('') });
+
+	return [evenSquares, oddSquares];
 };
