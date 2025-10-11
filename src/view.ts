@@ -161,6 +161,47 @@ export const createView = (
 
 /** Draw the check pattern. */
 const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
+	const { rows, columns } = board;
+
+	// Use the fancy method if we can, it is about a third of the size.
+	if (!(columns % 2 || rows % 2)) {
+		return drawEvenCheck(board, theme, dimensions);
+	}
+
+	const { bw, sq } = dimensions;
+	const xw = sq;
+	const yw = sq;
+
+	const even: string[] = [];
+	const odd: string[] = [];
+	const parts = [even, odd];
+	// Need to do this to have a dark square in the bottom left when rows are odd.
+	if (rows % 2) parts.reverse();
+	for (let row = 0; row < rows; row++) {
+		for (let col = 0; col < columns; col += 2) {
+			const x = bw + col * xw;
+			const y = bw + row * yw;
+			// On even rows start with an even square.
+			parts[0].push(`M${x},${y}h${xw}v${yw}h${-xw}Z`);
+			// Only draw the next square if it fits on the row.
+			if (col + 2 > columns) break;
+			parts[1].push(`M${x + xw},${y}h${xw}v${yw}h${-xw}Z`);
+		}
+		parts.reverse();
+	}
+
+	const evenSquares = s('path', { fill: theme.board[0], d: even.join('') });
+	const oddSquares = s('path', { fill: theme.board[1], d: odd.join('') });
+
+	return [evenSquares, oddSquares];
+};
+
+/** Draw the check pattern. */
+const drawEvenCheck = (
+	board: Board,
+	theme: Theme,
+	dimensions: ViewDimensions,
+) => {
 	const { vbw, vbh, bw, sq } = dimensions;
 
 	const xw = sq;
