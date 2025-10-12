@@ -1,4 +1,6 @@
-import { type Board } from './board';
+import { sets, type PieceSet } from './piece';
+import { attachView, type Board } from './board';
+
 import { s } from './utils';
 
 /** A view of a chess-like board. */
@@ -11,12 +13,20 @@ export interface View {
 	elements: ViewElements;
 	/** Board dimensions. */
 	dimensions: ViewDimensions;
+	/** Set of pieces to display. */
+	pieces: PieceSet;
 }
 
 export interface ViewElements {
 	board: SVGSVGElement;
 	evenSquares: SVGElement;
 	oddSquares: SVGElement;
+	pieces: Record<string, {
+		offsetX: number;
+		offsetY: number;
+		scale: number;
+		element: SVGElement
+	}>;
 	border?: SVGElement;
 	edge?: SVGElement;
 	borderLabels?: SVGElement;
@@ -58,6 +68,8 @@ export interface Theme {
 
 export interface CreateViewOptions {
 	theme: Partial<Theme>;
+	/** Name of piece set to use. */
+	pieces: string;
 }
 
 const defaultBorderSizeFactor = 0.5;
@@ -75,10 +87,6 @@ const defaultTheme: Theme = {
 	fontFamily: 'system-ui, sans-serif',
 };
 
-const defaults: CreateViewOptions = {
-	theme: defaultTheme,
-};
-
 /**
  * Create a board.
  *
@@ -92,7 +100,8 @@ export const createView = (
 	options: Partial<CreateViewOptions> = {},
 ): View => {
 	const settings: CreateViewOptions = {
-		...defaults,
+		theme: defaultTheme,
+		pieces: 'default',
 		...options,
 	};
 
@@ -143,6 +152,7 @@ export const createView = (
 	elements.board.append(evenSquares);
 	elements.oddSquares = oddSquares;
 	elements.board.append(oddSquares);
+	elements.pieces = {};
 
 	// Add the edge.
 	elements.edge = s('path', {
@@ -157,13 +167,21 @@ export const createView = (
 	elements.borderLabels = drawBorderLabels(board, theme, dimensions);
 	elements.board.append(elements.borderLabels);
 
-	return {
+	// Add the set of pieces.
+	const pieces = sets[settings.pieces];
+
+	const view: View = {
 		board,
 		theme,
 		dimensions,
 		// We need to be sure we have set everything required.
 		elements: elements as ViewElements,
+		pieces,
 	};
+
+	attachView(board, view);
+
+	return view;
 };
 
 /** Draw the check pattern. */
@@ -309,4 +327,15 @@ const drawBorderLabels = (
 	g.append(topLabels, rightLabels, bottomLabels, leftLabels);
 
 	return g;
+};
+
+/** Get the viewBox coordinates for a square index. */
+export const getCoordinates = (view: View, index: number): number[] => {
+	const { columns, rows } = view.board;
+	const { bw, sq } = view.dimensions;
+	const column = index % columns;
+	const row = (index - column) / rows;
+	const x = bw + sq * column;
+	const y = bw + sq * row;
+	return [x, y];
 };

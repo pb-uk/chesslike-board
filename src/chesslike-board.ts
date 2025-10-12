@@ -1,4 +1,4 @@
-export { createBoard } from './board';
+export { createBoard, setPiece, movePiece} from './board';
 export { createView } from './view';
 
 /** Package version. */
