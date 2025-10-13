@@ -5,7 +5,7 @@
 	"type": "module",
 	"browser": "./dist/chesslike-board.min.js",
 	"exports": {
-		".": "./dist/chesslike-board.js"
+		".": "./dist/chesslike-board.mjs"
 	},
 	"types": "./dist/chesslike-board.d.ts",
 	"files": [
@@ -29,9 +29,11 @@
 	"scripts": {
 		"fix": "prettier . --write && eslint . --fix",
 		"dev": "vite --config vite.config.dev.js",
-		"build": "tsc && vite build && npm run build:rename && npm run build:types && prettier ./dist/*.d.ts --write",
-		"build:rename": "shx mv dist/*.iife.js dist/chesslike-board.min.js && shx mv dist/*.iife.js.map dist/chesslike-board.min.js.map",
-		"build:types": "tsc -p tsconfig.types.json",
+		"build": "tsc && vite build && npm run build:rename && npm run build:types",
+		"build:rename": "npm run build:rename:iife && npm run build:rename:esm",
+		"build:rename:iife": "shx mv dist/*.iife.js dist/chesslike-board.min.js && shx mv dist/*.iife.js.map dist/chesslike-board.min.js.map",
+		"build:rename:esm": " shx mv dist/*board.js dist/chesslike-board.mjs && shx mv dist/*board.js.map dist/chesslike-board.mjs.map",
+		"build:types": "tsc -p tsconfig.types.json && prettier ./dist/*.d.ts --write",
 		"preview": "vite preview",
 		"test": "vitest run",
 		"test:watch": "vitest",

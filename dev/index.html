@@ -6,7 +6,20 @@
 		<title>Chesslike Board</title>
 	</head>
 	<body>
-		<div id="app"></div>
 		<script type="module" src="/src/main.ts"></script>
+
+		<div style="margin: auto">
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -2em">
+				<div style="width: 40%; min-width: 320px; margin: 0 2em">
+					<h2>Fools mate</h2>
+					<div id="fools-mate"></div>
+				</div>
+
+				<div style="width: 40%; min-width: 320px; margin: 0 2em">
+					<h2>Knight's tour</h2>
+					<div id="knights-tour"></div>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>

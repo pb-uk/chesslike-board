@@ -1,6 +1,8 @@
 import { sets, type PieceSet } from './piece';
 import { attachView, type Board } from './board';
 
+import { defaultTheme, type Theme } from './theme';
+
 import { s } from './utils';
 
 /** A view of a chess-like board. */
@@ -10,6 +12,7 @@ export interface View {
 	/** Colour etc. theme. */
 	theme: Theme;
 	/** SVG elements making up the board. */
+	rootElement: SVGSVGElement;
 	elements: ViewElements;
 	/** Board dimensions. */
 	dimensions: ViewDimensions;
@@ -18,18 +21,18 @@ export interface View {
 }
 
 export interface ViewElements {
-	board: SVGSVGElement;
 	evenSquares: SVGElement;
 	oddSquares: SVGElement;
-	pieces: Record<string, {
+	squares: ({
 		offsetX: number;
 		offsetY: number;
 		scale: number;
-		element: SVGElement
-	}>;
+		element: SVGElement;
+	} | null)[];
 	border?: SVGElement;
 	edge?: SVGElement;
 	borderLabels?: SVGElement;
+	cellLabels?: SVGElement;
 }
 
 export interface ViewDimensions {
@@ -45,27 +48,6 @@ export interface ViewDimensions {
 	sq: number;
 }
 
-export interface Theme {
-	/** Size of one square. */
-	size: number;
-	/** Border width. */
-	borderSize: number | boolean;
-	/** Edge width. */
-	edgeSize: number | boolean;
-	/** Colours for board. */
-	board: string[];
-	/** Border colour. */
-	border: string;
-	/** Colours for labels on the board. */
-	text: string[];
-	/** Colour for labels in the border. */
-	borderText: string;
-	/** Colour for the edge/outline of the board. */
-	edge: string;
-	/** Font for labels. */
-	fontFamily: string;
-}
-
 export interface CreateViewOptions {
 	theme: Partial<Theme>;
 	/** Name of piece set to use. */
@@ -75,20 +57,8 @@ export interface CreateViewOptions {
 const defaultBorderSizeFactor = 0.5;
 const defaultEdgeSizeFactor = 0.025;
 
-const defaultTheme: Theme = {
-	size: 40,
-	borderSize: true,
-	edgeSize: true,
-	board: ['#efd9b5', '#b58862'],
-	text: ['#b58862', '#efd9b5'],
-	edge: '#b58862',
-	border: '#efd9b5',
-	borderText: '#b58862',
-	fontFamily: 'system-ui, sans-serif',
-};
-
 /**
- * Create a board.
+ * Create a view of a board.
  *
  * @param options
  * @param options.columns Number of columns [8]
@@ -136,7 +106,7 @@ export const createView = (
 	// The whole view lives inside an SVG element.
 	const elements: Partial<ViewElements> = {};
 
-	elements.board = s('svg', { viewBox }) as SVGSVGElement;
+	const rootElement = s('svg', { viewBox }) as SVGSVGElement;
 
 	// Add the border.
 	elements.border = s('path', {
@@ -144,15 +114,15 @@ export const createView = (
 		d: `M0,0H${vbw}V${vbh}H0ZM${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}H${bw}`,
 	});
 
-	elements.board.append(elements.border);
+	rootElement.append(elements.border);
 
 	// Add the squares.
 	const [evenSquares, oddSquares] = drawCheck(board, theme, dimensions);
 	elements.evenSquares = evenSquares;
-	elements.board.append(evenSquares);
+	rootElement.append(evenSquares);
 	elements.oddSquares = oddSquares;
-	elements.board.append(oddSquares);
-	elements.pieces = {};
+	rootElement.append(oddSquares);
+	elements.squares = new Array(board.columns * board.rows).fill(null);
 
 	// Add the edge.
 	elements.edge = s('path', {
@@ -161,11 +131,13 @@ export const createView = (
 		fill: 'none',
 		d: `M${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}Z`,
 	});
+	rootElement.append(elements.edge);
 
-	elements.board.append(elements.edge);
-
+	// Add labels.
 	elements.borderLabels = drawBorderLabels(board, theme, dimensions);
-	elements.board.append(elements.borderLabels);
+	rootElement.append(elements.borderLabels);
+	elements.cellLabels = drawCellLabels(board, theme, dimensions);
+	rootElement.append(elements.cellLabels);
 
 	// Add the set of pieces.
 	const pieces = sets[settings.pieces];
@@ -174,6 +146,7 @@ export const createView = (
 		board,
 		theme,
 		dimensions,
+		rootElement,
 		// We need to be sure we have set everything required.
 		elements: elements as ViewElements,
 		pieces,
@@ -274,11 +247,82 @@ const drawEvenCheck = (
 	return [evenSquares, oddSquares];
 };
 
+/**
+ * Draw labels in the board's border.
+ *
+ * @param board
+ * @param theme
+ * @param dimensions
+ * @returns An SVG element containing all the labels.
+ */
 const drawBorderLabels = (
 	board: Board,
 	theme: Theme,
 	dimensions: ViewDimensions,
-) => {
+): SVGElement => {
+	const { columns, rows } = board;
+	const { bw, sq, vbh, vbw } = dimensions;
+
+	// const topLabels = s('g', { 'text-anchor': 'middle' });
+	// const bottomLabels = s('g', { 'text-anchor': 'middle' });
+	// const leftLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
+	// const rightLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
+	const align = {
+		'text-anchor': 'middle',
+		'dominant-baseline': 'middle',
+		fill: theme.borderText,
+	};
+	const topLabels = s('g', align);
+	const bottomLabels = s('g', align);
+	const leftLabels = s('g', align);
+	const rightLabels = s('g', align);
+
+	const yTop = bw * 0.5;
+	const yBottom = vbh - bw * 0.5;
+	for (let col = 0; col < columns; col++) {
+		const x = bw + sq * (col + 0.5);
+		let text = s('text', { x, y: yTop });
+		text.textContent = board.colLabels[col];
+		topLabels.append(text);
+		text = s('text', { x, y: yBottom });
+		text.textContent = board.colLabels[col];
+		bottomLabels.append(text);
+	}
+
+	const xLeft = bw * 0.5;
+	const xRight = vbw - bw * 0.5;
+	for (let row = 0; row < rows; row++) {
+		const y = bw + sq * (row + 0.5);
+		let text = s('text', { x: xLeft, y });
+		text.textContent = board.rowLabels[row];
+		leftLabels.append(text);
+		text = s('text', { x: xRight, y });
+		text.textContent = board.rowLabels[row];
+		rightLabels.append(text);
+	}
+
+	const g = s('g', {
+		'font-family': theme.fontFamily,
+		'font-size': bw * 0.625,
+	});
+	g.append(topLabels, rightLabels, bottomLabels, leftLabels);
+
+	return g;
+};
+
+/**
+ * Draw labels in the board's bottom row and left column.
+ *
+ * @param board
+ * @param theme
+ * @param dimensions
+ * @returns An SVG element containing all the labels.
+ */
+const drawCellLabels = (
+	board: Board,
+	theme: Theme,
+	dimensions: ViewDimensions,
+): SVGElement => {
 	const { columns, rows } = board;
 	const { bw, sq, vbh, vbw } = dimensions;
 

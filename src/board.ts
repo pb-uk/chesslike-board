@@ -1,13 +1,8 @@
-import {
-	type View,
-} from './view';
+import { createView, type View } from './view';
 
-import {
-	onMovePiece,
-	onSetPiece,
-	type MovePiecePromise,
-	type SetPiecePromise,
-} from './piece';
+import { onMovePiece, onSetPiece, onSetPosition } from './piece';
+
+import { fenToPosition } from './fen';
 
 /** An n x m board. */
 export interface Board {
@@ -43,13 +38,17 @@ export interface CreateBoardOptions {
 	columns: number;
 	/** Number of rows. */
 	rows: number;
+	/** HTML element or selector for destination to render a view. */
+	target?: HTMLElement | string;
 }
 
-type LabelPosition = string;
-type IndexPosition = number;
-type RowColPosition = [a: number, b: number];
+type SquareLabel = string;
+type SquareIndex = number;
+type SquareColRow = [a: number, b: number];
 
-export type Position = LabelPosition | IndexPosition | RowColPosition;
+export type SquareId = SquareLabel | SquareIndex | SquareColRow;
+
+export type Position = [index: number, key: string][];
 
 /** Attach a view to a board so it can be polled by events. */
 export const attachView = (board: Board, view: View): void => {
@@ -91,7 +90,7 @@ export const createBoard = (
 		map[label] = i;
 	}
 
-	return {
+	const board = {
 		columns,
 		rows,
 		squares,
@@ -100,6 +99,28 @@ export const createBoard = (
 		rowLabels,
 		views: [] as View[],
 	};
+
+	if (settings.target) {
+		// Create a view and render it in the target.
+		if (typeof settings.target === 'string') {
+			const el = document.querySelector(settings.target);
+			if (el) {
+				const view = createView(board);
+				el.replaceChildren(view.rootElement);
+			}
+		} else {
+			try {
+				settings.target.replaceChildren();
+				const view = createView(board);
+				settings.target.append(view.rootElement);
+			} catch (e) {
+				// User has provided an element that cannot be used.
+				console.error(e);
+			}
+		}
+	}
+
+	return board;
 };
 
 /** Generate labels for a board of unlimited size e.g. 'aa123'. */
@@ -136,17 +157,17 @@ export const createLabels = (columns: number, rows: number): string[][] => {
 	return [labels, colLabels, rowLabels];
 };
 
-/** Get the position index for a variadic position. */
-export const getIndex = (board: Board, position: Position): number =>
-	typeof position === 'string' ? board.map[position]
-	: Array.isArray(position) ? board.columns * position[1] + position[0]
-	: position;
+/** Get the sqare index for a variadic position. */
+export const getIndex = (board: Board, squareId: SquareId): number =>
+	typeof squareId === 'string' ? board.map[squareId]
+	: Array.isArray(squareId) ? board.columns * squareId[1] + squareId[0]
+	: squareId;
 
-export const movePiece = (
+export const movePiece = async (
 	board: Board,
-	from: Position,
-	to: Position,
-): [a: string | null, b: MovePiecePromise[]] => {
+	from: SquareId,
+	to: SquareId,
+): Promise<string | null> => {
 	from = getIndex(board, from);
 	to = getIndex(board, to);
 	const fromSquare = board.squares[from];
@@ -155,11 +176,12 @@ export const movePiece = (
 	toSquare.piece = fromSquare.piece;
 	fromSquare.piece = null;
 
-	const promises = [] as MovePiecePromise[];
+	const promises = [];
 	for (const view of board.views) {
 		promises.push(onMovePiece(view, { from, to }));
 	}
-	return [previous, promises];
+	await Promise.all(promises);
+	return previous;
 };
 
 /**
@@ -172,19 +194,47 @@ export const movePiece = (
  *          empty) and an array of promises resolving when views complete
  *          transitions.
  */
-export const setPiece = (
+export const setPiece = async (
 	board: Board,
-	position: Position,
+	squareId: SquareId,
 	piece: string | null = null,
-): [a: string | null, b: SetPiecePromise[]] => {
-	const index = getIndex(board, position);
+): Promise<string | null> => {
+	console.log('Setting on the board');
+	const index = getIndex(board, squareId);
 	const square = board.squares[index];
 	const previous = square.piece;
 	square.piece = piece;
 
-	const promises = [] as SetPiecePromise[];
+	const promises = [];
+	console.log(board.views);
 	for (const view of board.views) {
 		promises.push(onSetPiece(view, { index, piece, previous }));
 	}
-	return [previous, promises];
+
+	await Promise.all(promises);
+	return previous;
+};
+
+/**
+ * Set multiple pieces on the board.
+ * @param board
+ * @param position Array of pieces specified by [index, key].
+ * @returns SVG elements created by each view.
+ */
+export const setPosition = async (
+	board: Board,
+	position: Position | string | true,
+): Promise<SVGElement[][]> => {
+	if (!Array.isArray(position)) {
+		position = fenToPosition(position);
+	}
+
+	for (const [index, key] of position) {
+		board.squares[index].piece = key;
+	}
+	const promises = [];
+	for (const view of board.views) {
+		promises.push(onSetPosition(view, position));
+	}
+	return Promise.all(promises);
 };
