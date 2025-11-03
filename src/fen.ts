@@ -32,7 +32,7 @@ export const fenToPosition = (fen: string | true) => {
 			index += n;
 		}
 	}
-	console.log(position);
+
 	return position;
 };
 

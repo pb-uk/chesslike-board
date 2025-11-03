@@ -3,6 +3,8 @@ import { createView, type View } from './view';
 import { onMovePiece, onSetPiece, onSetPosition } from './piece';
 
 import { fenToPosition } from './fen';
+import type { CreateViewOptions } from './view';
+import type { TransformCoordinates } from './transform';
 
 /** An n x m board. */
 export interface Board {
@@ -10,6 +12,8 @@ export interface Board {
 	columns: number;
 	/** Number of rows. */
 	rows: number;
+	/** An array [w, h] of cell dimensions for easy transformations. */
+	wh: TransformCoordinates;
 	/**
 	 * The contents of the board.
 	 *
@@ -40,6 +44,8 @@ export interface CreateBoardOptions {
 	rows: number;
 	/** HTML element or selector for destination to render a view. */
 	target?: HTMLElement | string;
+	/** Options for the view. */
+	view: Partial<CreateViewOptions>;
 }
 
 type SquareLabel = string;
@@ -69,6 +75,7 @@ export const createBoard = (
 	const settings: CreateBoardOptions = {
 		columns: 8,
 		rows: 8,
+		view: {},
 		...options,
 	};
 
@@ -93,6 +100,7 @@ export const createBoard = (
 	const board = {
 		columns,
 		rows,
+		wh: [columns, rows] as TransformCoordinates,
 		squares,
 		map,
 		colLabels,
@@ -105,13 +113,13 @@ export const createBoard = (
 		if (typeof settings.target === 'string') {
 			const el = document.querySelector(settings.target);
 			if (el) {
-				const view = createView(board);
+				const view = createView(board, settings.view);
 				el.replaceChildren(view.rootElement);
 			}
 		} else {
 			try {
 				settings.target.replaceChildren();
-				const view = createView(board);
+				const view = createView(board, settings.view);
 				settings.target.append(view.rootElement);
 			} catch (e) {
 				// User has provided an element that cannot be used.
@@ -199,14 +207,12 @@ export const setPiece = async (
 	squareId: SquareId,
 	piece: string | null = null,
 ): Promise<string | null> => {
-	console.log('Setting on the board');
 	const index = getIndex(board, squareId);
 	const square = board.squares[index];
 	const previous = square.piece;
 	square.piece = piece;
 
 	const promises = [];
-	console.log(board.views);
 	for (const view of board.views) {
 		promises.push(onSetPiece(view, { index, piece, previous }));
 	}

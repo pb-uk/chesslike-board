@@ -29,7 +29,7 @@
 	"scripts": {
 		"fix": "prettier . --write && eslint . --fix",
 		"dev": "vite --config vite.config.dev.js",
-		"build": "tsc && vite build && npm run build:rename && npm run build:types",
+		"build": "rimraf dist && tsc && vite build && npm run build:rename && npm run build:types",
 		"build:rename": "npm run build:rename:iife && npm run build:rename:esm",
 		"build:rename:iife": "shx mv dist/*.iife.js dist/chesslike-board.min.js && shx mv dist/*.iife.js.map dist/chesslike-board.min.js.map",
 		"build:rename:esm": " shx mv dist/*board.js dist/chesslike-board.mjs && shx mv dist/*board.js.map dist/chesslike-board.mjs.map",
@@ -46,6 +46,7 @@
 		"eslint": "^9.37.0",
 		"globals": "^16.4.0",
 		"prettier": "^3.6.2",
+		"rimraf": "^6.1.0",
 		"shx": "^0.4.0",
 		"typescript": "~5.9.3",
 		"typescript-eslint": "^8.46.0",

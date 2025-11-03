@@ -1,12 +1,14 @@
+/// <reference types="vitest/config" />
 import path from 'node:path';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { fileURLToPath } from 'node:url';
+// import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const name = 'ChesslikeBoard';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// https://vite.dev/config/
 export default defineConfig({
 	plugins: [tsconfigPaths()],
 	resolve: {

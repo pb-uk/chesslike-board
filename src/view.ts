@@ -1,7 +1,13 @@
-import { sets, type PieceSet } from './piece';
+import { sets, type PieceSet, type Pieces } from './piece';
 import { attachView, type Board } from './board';
 
 import { defaultTheme, type Theme } from './theme';
+import {
+	transformations,
+	type Transformation,
+	type TransformationFn,
+	type TransformCoordinates,
+} from './transform';
 
 import { s } from './utils';
 
@@ -18,6 +24,13 @@ export interface View {
 	dimensions: ViewDimensions;
 	/** Set of pieces to display. */
 	pieces: PieceSet;
+	/**
+	 * Option to scale pawns so that they look more like pawns which noone but me
+	 * seems to think is a good idea.
+	 */
+	scalePawns?: boolean;
+	/** Transformation to apply e.g. rotateR. */
+	transform?: TransformationFn;
 }
 
 export interface ViewElements {
@@ -51,7 +64,14 @@ export interface ViewDimensions {
 export interface CreateViewOptions {
 	theme: Partial<Theme>;
 	/** Name of piece set to use. */
-	pieces: string;
+	pieces: Pieces;
+	/** Transformation to apply e.g. 'rotateR'. */
+	transform?: Transformation;
+	/**
+	 * Option to scale pawns so that they look more like pawns which noone but me
+	 * seems to think is a good idea.
+	 */
+	scalePawns?: boolean;
 }
 
 const defaultBorderSizeFactor = 0.5;
@@ -108,6 +128,25 @@ export const createView = (
 
 	const rootElement = s('svg', { viewBox }) as SVGSVGElement;
 
+	// Get the set of pieces to use.
+	const pieces = sets[settings.pieces];
+
+	const view: View = {
+		board,
+		theme,
+		dimensions,
+		rootElement,
+		// We haven't set these yet so we need to cooerce.
+		elements: elements as ViewElements,
+		pieces,
+		scalePawns: settings.scalePawns,
+	};
+
+	// Apply any transformation.
+	if (settings.transform && settings.transform in transformations) {
+		view.transform = transformations[settings.transform];
+	}
+
 	// Add the border.
 	elements.border = s('path', {
 		fill: theme.border,
@@ -134,23 +173,10 @@ export const createView = (
 	rootElement.append(elements.edge);
 
 	// Add labels.
-	elements.borderLabels = drawBorderLabels(board, theme, dimensions);
+	elements.borderLabels = drawBorderLabels(view, theme, dimensions);
 	rootElement.append(elements.borderLabels);
-	elements.cellLabels = drawCellLabels(board, theme, dimensions);
+	elements.cellLabels = drawCellLabels(view, theme, dimensions);
 	rootElement.append(elements.cellLabels);
-
-	// Add the set of pieces.
-	const pieces = sets[settings.pieces];
-
-	const view: View = {
-		board,
-		theme,
-		dimensions,
-		rootElement,
-		// We need to be sure we have set everything required.
-		elements: elements as ViewElements,
-		pieces,
-	};
 
 	attachView(board, view);
 
@@ -256,11 +282,12 @@ const drawEvenCheck = (
  * @returns An SVG element containing all the labels.
  */
 const drawBorderLabels = (
-	board: Board,
+	view: View,
 	theme: Theme,
 	dimensions: ViewDimensions,
 ): SVGElement => {
-	const { columns, rows } = board;
+	const { columns, rows, wh, colLabels, rowLabels } = view.board;
+	const { transform } = view;
 	const { bw, sq, vbh, vbw } = dimensions;
 
 	// const topLabels = s('g', { 'text-anchor': 'middle' });
@@ -279,26 +306,48 @@ const drawBorderLabels = (
 
 	const yTop = bw * 0.5;
 	const yBottom = vbh - bw * 0.5;
-	for (let col = 0; col < columns; col++) {
-		const x = bw + sq * (col + 0.5);
-		let text = s('text', { x, y: yTop });
-		text.textContent = board.colLabels[col];
-		topLabels.append(text);
-		text = s('text', { x, y: yBottom });
-		text.textContent = board.colLabels[col];
-		bottomLabels.append(text);
-	}
 
 	const xLeft = bw * 0.5;
 	const xRight = vbw - bw * 0.5;
+
+	const createLabel = (xy: TransformCoordinates) => {
+		const [col, row] = xy;
+
+		if (!isNaN(col)) {
+			const x = bw + sq * (col + 0.5);
+			let text = s('text', { x, y: yTop });
+			text.textContent = colLabels[col];
+			topLabels.append(text);
+			text = s('text', { x, y: yBottom });
+			text.textContent = colLabels[col];
+			bottomLabels.append(text);
+		}
+
+		if (!isNaN(row)) {
+			const y = bw + sq * (row + 0.5);
+			let text = s('text', { x: xLeft, y });
+			text.textContent = rowLabels[row];
+			leftLabels.append(text);
+			text = s('text', { x: xRight, y });
+			text.textContent = rowLabels[row];
+			rightLabels.append(text);
+		}
+	};
+
+	for (let c = 0; c < columns; c++) {
+		const xy = [c, NaN] as TransformCoordinates;
+		if (transform) {
+			transform(wh, xy);
+		}
+		createLabel(xy);
+	}
+
 	for (let row = 0; row < rows; row++) {
-		const y = bw + sq * (row + 0.5);
-		let text = s('text', { x: xLeft, y });
-		text.textContent = board.rowLabels[row];
-		leftLabels.append(text);
-		text = s('text', { x: xRight, y });
-		text.textContent = board.rowLabels[row];
-		rightLabels.append(text);
+		const xy = [NaN, row] as TransformCoordinates;
+		if (transform) {
+			transform(wh, xy);
+		}
+		createLabel(xy);
 	}
 
 	const g = s('g', {
@@ -319,11 +368,12 @@ const drawBorderLabels = (
  * @returns An SVG element containing all the labels.
  */
 const drawCellLabels = (
-	board: Board,
+	view: View,
 	theme: Theme,
 	dimensions: ViewDimensions,
 ): SVGElement => {
-	const { columns, rows } = board;
+	const { columns, rows, wh, colLabels, rowLabels } = view.board;
+	const { transform } = view;
 	const { bw, sq, vbh, vbw } = dimensions;
 
 	// const topLabels = s('g', { 'text-anchor': 'middle' });
@@ -342,26 +392,47 @@ const drawCellLabels = (
 
 	const yTop = bw * 0.5;
 	const yBottom = vbh - bw * 0.5;
-	for (let col = 0; col < columns; col++) {
-		const x = bw + sq * (col + 0.5);
-		let text = s('text', { x, y: yTop });
-		text.textContent = board.colLabels[col];
-		topLabels.append(text);
-		text = s('text', { x, y: yBottom });
-		text.textContent = board.colLabels[col];
-		bottomLabels.append(text);
-	}
-
 	const xLeft = bw * 0.5;
 	const xRight = vbw - bw * 0.5;
+
+	const createLabel = (xy: TransformCoordinates) => {
+		const [col, row] = xy;
+
+		if (!isNaN(col)) {
+			const x = bw + sq * (col + 0.5);
+			let text = s('text', { x, y: yTop });
+			text.textContent = colLabels[col];
+			topLabels.append(text);
+			text = s('text', { x, y: yBottom });
+			text.textContent = colLabels[col];
+			bottomLabels.append(text);
+		}
+
+		if (!isNaN(row)) {
+			const y = bw + sq * (row + 0.5);
+			let text = s('text', { x: xLeft, y });
+			text.textContent = rowLabels[row];
+			leftLabels.append(text);
+			text = s('text', { x: xRight, y });
+			text.textContent = rowLabels[row];
+			rightLabels.append(text);
+		}
+	};
+
+	for (let c = 0; c < columns; c++) {
+		const xy = [c, NaN] as TransformCoordinates;
+		if (transform) {
+			transform(wh, xy);
+		}
+		createLabel(xy);
+	}
+
 	for (let row = 0; row < rows; row++) {
-		const y = bw + sq * (row + 0.5);
-		let text = s('text', { x: xLeft, y });
-		text.textContent = board.rowLabels[row];
-		leftLabels.append(text);
-		text = s('text', { x: xRight, y });
-		text.textContent = board.rowLabels[row];
-		rightLabels.append(text);
+		const xy = [NaN, row] as TransformCoordinates;
+		if (transform) {
+			transform(wh, xy);
+		}
+		createLabel(xy);
 	}
 
 	const g = s('g', {
@@ -375,11 +446,15 @@ const drawCellLabels = (
 
 /** Get the viewBox coordinates for a square index. */
 export const getCoordinates = (view: View, index: number): number[] => {
-	const { columns, rows } = view.board;
+	const { columns, wh } = view.board;
 	const { bw, sq } = view.dimensions;
 	const column = index % columns;
-	const row = (index - column) / rows;
-	const x = bw + sq * column;
-	const y = bw + sq * row;
+	const row = (index - column) / columns;
+	const colRow = [column, row] as TransformCoordinates;
+	if (view.transform) {
+		view.transform(wh, colRow);
+	}
+	const x = bw + sq * colRow[0];
+	const y = bw + sq * colRow[1];
 	return [x, y];
 };

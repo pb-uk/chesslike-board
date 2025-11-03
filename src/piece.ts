@@ -13,6 +13,11 @@ export interface Piece {
 	size?: [w: number, h: number];
 	/** SVG to draw the piece. */
 	svg: string;
+	/**
+	 * The (maximum) height of a piece. This will be used to scale the pieces to
+	 * fit the square.
+	 */
+	height?: number;
 }
 
 /** A set of pieces. */
@@ -37,13 +42,15 @@ export interface PieceSet {
 	pieces: Record<string, Piece>;
 }
 
-export const sets: Record<string, PieceSet> = {
+export const sets = {
 	default: fa7,
 	cburnett,
 	fa7,
 	fa7Solid,
 	fa5Solid,
 };
+
+export type Pieces = keyof typeof sets;
 
 /** Data provided to OnMovePiece(). */
 export interface MovePiecePayload {
@@ -110,9 +117,7 @@ const setPiece = (view: View, data: SetPiecePayload): SVGElement[] => {
 		return [oldPiece.element];
 	}
 
-	// Get the right scale for the piece.
 	const { sq } = view.dimensions;
-	const scale = sq / view.pieces.height;
 
 	// Now get the SVG for the piece: sets with uncoloured pieces need to be
 	// handled differently.
@@ -125,14 +130,25 @@ const setPiece = (view: View, data: SetPiecePayload): SVGElement[] => {
 
 	// Work out where to place it so it is on the baseline in the centre of the
 	// square.
-	const { size, svg } = view.pieces.pieces[pieceKey];
+	const { size, svg, height } = view.pieces.pieces[pieceKey];
+
+	const { scalePawns } = view;
+	// Get the right scale for the piece.
+	const scale =
+		sq / (scalePawns ? (height ?? view.pieces.height) : view.pieces.height);
+	const hOffsetScale = sq / view.pieces.height;
+
 	// Coordinates of the top left of the square.
 	const [left, top] = getCoordinates(view, data.index);
 	// Dimensions of the sprite.
 	const [w, h] = size ?? view.pieces.size ?? [1, 1];
 
-	const offsetX = sq / 2 - (w * scale) / 2;
-	const offsetY = sq / 2 - (h * scale) / 2;
+	const offsetX = (sq - w * scale) / 2;
+	// The baseline is determined by the height of the SET, not the piece.
+	const offsetY =
+		scalePawns ?
+			(sq + h * hOffsetScale) / 2 - h * scale
+		:	(sq - h * hOffsetScale) / 2;
 	const x = left + offsetX;
 	const y = top + offsetY;
 	const transform = `translate(${x} ${y}) scale(${scale})`;

@@ -1,7 +1,14 @@
 import * as ChesslikeBoard from '../../src/chesslike-board';
 import { version as pkgVersion } from '../../package.json';
 
-const api = ['createBoard', 'createView', 'movePiece', 'setPiece', 'version'];
+const api = [
+	'createBoard',
+	'createView',
+	'movePiece',
+	'setPiece',
+	'setPosition',
+	'version',
+];
 
 describe('The entry point', () => {
 	it('should export the correct version', () => {
