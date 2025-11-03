@@ -5,8 +5,8 @@ import { defaultTheme, type Theme } from './theme';
 import {
 	transformations,
 	type Transformation,
-	type TransformationFn,
 	type TransformCoordinates,
+	type Coordinates,
 } from './transform';
 
 import { s } from './utils';
@@ -30,7 +30,7 @@ export interface View {
 	 */
 	scalePawns?: boolean;
 	/** Transformation to apply e.g. rotateR. */
-	transform?: TransformationFn;
+	transform?: TransformCoordinates;
 }
 
 export interface ViewElements {
@@ -310,7 +310,7 @@ const drawBorderLabels = (
 	const xLeft = bw * 0.5;
 	const xRight = vbw - bw * 0.5;
 
-	const createLabel = (xy: TransformCoordinates) => {
+	const createLabel = (xy: Coordinates) => {
 		const [col, row] = xy;
 
 		if (!isNaN(col)) {
@@ -335,7 +335,7 @@ const drawBorderLabels = (
 	};
 
 	for (let c = 0; c < columns; c++) {
-		const xy = [c, NaN] as TransformCoordinates;
+		const xy = [c, NaN] as Coordinates;
 		if (transform) {
 			transform(wh, xy);
 		}
@@ -343,7 +343,7 @@ const drawBorderLabels = (
 	}
 
 	for (let row = 0; row < rows; row++) {
-		const xy = [NaN, row] as TransformCoordinates;
+		const xy = [NaN, row] as Coordinates;
 		if (transform) {
 			transform(wh, xy);
 		}
@@ -395,7 +395,7 @@ const drawCellLabels = (
 	const xLeft = bw * 0.5;
 	const xRight = vbw - bw * 0.5;
 
-	const createLabel = (xy: TransformCoordinates) => {
+	const createLabel = (xy: Coordinates) => {
 		const [col, row] = xy;
 
 		if (!isNaN(col)) {
@@ -420,7 +420,7 @@ const drawCellLabels = (
 	};
 
 	for (let c = 0; c < columns; c++) {
-		const xy = [c, NaN] as TransformCoordinates;
+		const xy = [c, NaN] as Coordinates;
 		if (transform) {
 			transform(wh, xy);
 		}
@@ -428,7 +428,7 @@ const drawCellLabels = (
 	}
 
 	for (let row = 0; row < rows; row++) {
-		const xy = [NaN, row] as TransformCoordinates;
+		const xy = [NaN, row] as Coordinates;
 		if (transform) {
 			transform(wh, xy);
 		}
@@ -450,7 +450,7 @@ export const getCoordinates = (view: View, index: number): number[] => {
 	const { bw, sq } = view.dimensions;
 	const column = index % columns;
 	const row = (index - column) / columns;
-	const colRow = [column, row] as TransformCoordinates;
+	const colRow = [column, row] as Coordinates;
 	if (view.transform) {
 		view.transform(wh, colRow);
 	}

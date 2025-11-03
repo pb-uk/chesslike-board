@@ -4,7 +4,7 @@ import { onMovePiece, onSetPiece, onSetPosition } from './piece';
 
 import { fenToPosition } from './fen';
 import type { CreateViewOptions } from './view';
-import type { TransformCoordinates } from './transform';
+import type { Coordinates } from './transform';
 
 /** An n x m board. */
 export interface Board {
@@ -13,7 +13,7 @@ export interface Board {
 	/** Number of rows. */
 	rows: number;
 	/** An array [w, h] of cell dimensions for easy transformations. */
-	wh: TransformCoordinates;
+	wh: Coordinates;
 	/**
 	 * The contents of the board.
 	 *
@@ -100,7 +100,7 @@ export const createBoard = (
 	const board = {
 		columns,
 		rows,
-		wh: [columns, rows] as TransformCoordinates,
+		wh: [columns, rows] as Coordinates,
 		squares,
 		map,
 		colLabels,
