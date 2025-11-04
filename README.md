@@ -18,7 +18,7 @@ $ npm install chesslike-board@0.9
 import { createBoard } from 'chesslike-board';
 ```
 
-See https://github.io/pb-uk/chesslike-board for example usage.
+See https://pb-uk.github.io/chesslike-board/ for example usage.
 
 ## License
 
