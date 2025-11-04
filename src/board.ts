@@ -195,7 +195,7 @@ export const movePiece = async (
 
 export function* getSquares(board: Board, onlyOccupied = false) {
 	for (const square of board.squares) {
-		if (!onlyOccupied || square.piece) yield(square);
+		if (!onlyOccupied || square.piece) yield square;
 	}
 }
 
@@ -227,7 +227,7 @@ export const setPiece = async (
 
 	const promises = [];
 	for (const view of board.views) {
-		promises.push(onSetPiece(view, { index, piece, previous }));
+		promises.push(onSetPiece(view, { index, piece }));
 	}
 
 	await Promise.all(promises);

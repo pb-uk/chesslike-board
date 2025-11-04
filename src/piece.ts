@@ -62,7 +62,6 @@ export interface MovePiecePayload {
 export interface SetPiecePayload {
 	index: number;
 	piece: string | null;
-	// previous: string | null;
 }
 
 /** Render a piece moving. */
@@ -203,7 +202,7 @@ export const onSetPosition = async (
 	const pieces = [] as SVGElement[];
 	for (const [index, piece] of position) {
 		try {
-			setPiece(view, { index, piece, previous: null });
+			setPiece(view, { index, piece });
 		} catch (e) {
 			if (!ignoreMissingPieces) {
 				throw e;

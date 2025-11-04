@@ -6,6 +6,7 @@ import {
 	setPosition,
 	createView,
 	type Board,
+	type Transformation,
 } from '../../src/chesslike-board';
 
 const allPiecesFen = 'rnbqkpdc/RNBQKPDC';
@@ -94,7 +95,7 @@ async function wait(ms: number) {
 }
 
 // N Queens -----------------------------------------------------------
-const n = 26;
+const n = 28;
 
 async function nQueensSolve(
 	board: Board,
@@ -104,6 +105,7 @@ async function nQueensSolve(
 	let piece = 'wq';
 	if (column === 0) {
 		for (let i = 0; i < n; ++i) {
+			// availableRows[i] = i;
 			const j = Math.floor(Math.random() * (i + 1));
 			availableRows[i] = availableRows[j];
 			availableRows[j] = i;
@@ -117,15 +119,8 @@ async function nQueensSolve(
 		for (let i = 0; i < column; ++i) {
 			// Only need to check the diagonals.
 			if (
-				row - column + i >= 0 &&
-				getPiece(board, [i, row - column + i])
-			) {
-				attacked = true;
-				break;
-			}
-			if (
-				row + column - i < n &&
-				getPiece(board, [i, row + column - i])
+				(row - column + i >= 0 && getPiece(board, [i, row - column + i])) ||
+				(row + column - i < n && getPiece(board, [i, row + column - i]))
 			) {
 				attacked = true;
 				break;
@@ -135,7 +130,7 @@ async function nQueensSolve(
 			await setPiece(board, [column, row], null);
 			continue;
 		}
-		if (column === 25) {
+		if (column === n - 1) {
 			await wait(10000);
 		} else {
 			const newRows = availableRows.slice();
@@ -148,18 +143,28 @@ async function nQueensSolve(
 }
 
 async function nQueens() {
-	const board = createBoard({ rows: n, columns: n, target: '#n-queens' });
+	const board = createBoard({
+		rows: n,
+		columns: n,
+		target: '#n-queens',
+		view: { border: 1 },
+	});
 	nQueensSolve(board);
 }
 
 const transforms = () => {
 	const position = 'rnb/RNB';
-	const board = createBoard({ rows: 2, columns: 3, target: '#base', position});
-	const transforms = 'rotateR rotate rotateL flipH flipV transpose flipD'.split(' ');
+	const board = createBoard({ rows: 2, columns: 3, target: '#base', position });
+	const transforms = 'rotateR rotate rotateL flipH flipV transpose flipD'.split(
+		' ',
+	);
 	for (const transform of transforms) {
-		createView(board, { target: `#${transform}`, transform })
+		createView(board, {
+			target: `#${transform}`,
+			transform: transform as Transformation,
+		});
 	}
-}
+};
 
 knightsTour();
 foolsMate();

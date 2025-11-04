@@ -5,9 +5,10 @@
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"lib": ["ES2017", "DOM", "DOM.Iterable"],
-		"declaration": true,
+		"target": "ES2020",
+
 		"rootDir": "src",
+		"declaration": true,
 		"emitDeclarationOnly": true,
 		"outFile": "./dist/chesslike-board.d.ts",
 		"forceConsistentCasingInFileNames": true,

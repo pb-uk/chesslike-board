@@ -4,6 +4,7 @@ import { version as pkgVersion } from '../../package.json';
 const api = [
 	'createBoard',
 	'createView',
+	'getPiece',
 	'movePiece',
 	'pieces',
 	'setPiece',

@@ -230,7 +230,7 @@ export const createView = (
 	}
 
 	for (const { index, piece } of getSquares(board, true)) {
-		setPiece(view, { index, piece })
+		setPiece(view, { index, piece });
 	}
 
 	attachView(board, view);
