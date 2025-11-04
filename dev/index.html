@@ -4,25 +4,50 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Chesslike Board</title>
+		<style>
+			body {
+				font-family: system-ui, sans-serif;
+			}
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+			}
+		</style>
 	</head>
 	<body>
 		<script type="module" src="/src/main.ts"></script>
 
-		<div style="margin: auto">
+		<div style="margin: 0 2em">
 			<div style="display: flex; flex-wrap: wrap; margin: 0 -2em">
+				<div style="width: 100%; max-width: 75vh">
+					<h2>N Queens</h2>
+					<div id="n-queens"></div>
+				</div>
+
 				<div style="width: 40%; min-width: 320px; margin: 0 2em">
 					<h2>Fools mate</h2>
 					<div id="fools-mate"></div>
 				</div>
 
 				<div style="width: 40%; min-width: 320px; margin: 0 2em">
-					<h2>Knight's tour</h2>
+					<h2>Knight's tour transposed</h2>
 					<div id="knights-tour"></div>
+				</div>
+
+				<div style="width: 10%; min-width: 80px; margin: 0 2em">
+					<h2>Knight's tour</h2>
+					<div id="knights-tour-alt"></div>
+				</div>
+
+				<div style="width: 30%; min-width: 240px; margin: 0 2em">
+					<h2>cburnett pieces</h2>
+					<div id="cburnett"></div>
 				</div>
 
 				<div style="width: 40%; min-width: 320px; margin: 0 2em">
 					<h2>Font Awesome 7 pieces</h2>
-					<div id="fa7"></div>
+					<div id="fa7" ;></div>
 				</div>
 
 				<div style="width: 40%; min-width: 320px; margin: 0 2em">
@@ -35,9 +60,44 @@
 					<div id="fas5"></div>
 				</div>
 
-				<div style="width: 40%; min-width: 320px; margin: 0 2em">
-					<h2>cburnett pieces</h2>
-					<div id="cburnett"></div>
+				<div style="width: 180px; margin: 0 2em">
+					<h2>No transform</h2>
+					<div id="base"></div>
+				</div>
+
+				<div style="width: 180px; margin: 0 2em">
+					<h2>Flip horizontal</h2>
+					<div id="flipH"></div>
+				</div>
+
+				<div style="width: 180px; margin: 0 2em">
+					<h2>Flip vertical</h2>
+					<div id="flipV"></div>
+				</div>
+
+				<div style="width: 180px; margin: 0 2em">
+					<h2>Rotate 180°</h2>
+					<div id="rotate"></div>
+				</div>
+
+				<div style="width: 120px; margin: 0 2em">
+					<h2>Rotate right</h2>
+					<div id="rotateR"></div>
+				</div>
+
+				<div style="width: 120px; margin: 0 2em">
+					<h2>Rotate left</h2>
+					<div id="rotateL"></div>
+				</div>
+
+				<div style="width: 120px; margin: 0 2em">
+					<h2>Transpose</h2>
+					<div id="transpose"></div>
+				</div>
+
+				<div style="width: 120px; margin: 0 2em">
+					<h2>Flip diagonal</h2>
+					<div id="flipD"></div>
 				</div>
 			</div>
 		</div>

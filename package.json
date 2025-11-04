@@ -1,7 +1,7 @@
 {
 	"name": "chesslike-board",
 	"description": "Presentation layer for chess-like games",
-	"version": "0.3.0-1.dev",
+	"version": "0.9.0",
 	"type": "module",
 	"browser": "./dist/chesslike-board.min.js",
 	"exports": {

@@ -32,6 +32,7 @@ export interface Board {
 
 /** A single square/cell on a board. */
 export interface Square {
+	index: number;
 	label: string;
 	piece: string | null;
 }
@@ -46,6 +47,8 @@ export interface CreateBoardOptions {
 	target?: HTMLElement | string;
 	/** Options for the view. */
 	view: Partial<CreateViewOptions>;
+	/** Initial position in FEN notation. */
+	position?: string;
 }
 
 type SquareLabel = string;
@@ -88,13 +91,14 @@ export const createBoard = (
 
 	// Create the squares on the board and set to empty.
 	const squares: Square[] = new Array(length);
-	for (let i = 0; i < length; i++) {
-		const label = labels[i];
-		squares[i] = {
+	for (let index = 0; index < length; index++) {
+		const label = labels[index];
+		squares[index] = {
+			index,
 			label,
 			piece: null,
 		};
-		map[label] = i;
+		map[label] = index;
 	}
 
 	const board = {
@@ -108,26 +112,15 @@ export const createBoard = (
 		views: [] as View[],
 	};
 
-	if (settings.target) {
+	const { target } = settings;
+	if (target) {
 		// Create a view and render it in the target.
-		if (typeof settings.target === 'string') {
-			const el = document.querySelector(settings.target);
-			if (el) {
-				const view = createView(board, settings.view);
-				el.replaceChildren(view.rootElement);
-			}
-		} else {
-			try {
-				settings.target.replaceChildren();
-				const view = createView(board, settings.view);
-				settings.target.append(view.rootElement);
-			} catch (e) {
-				// User has provided an element that cannot be used.
-				console.error(e);
-			}
-		}
+		createView(board, { target, ...settings.view });
 	}
 
+	if (settings.position) {
+		setPosition(board, settings.position);
+	}
 	return board;
 };
 
@@ -171,25 +164,45 @@ export const getIndex = (board: Board, squareId: SquareId): number =>
 	: Array.isArray(squareId) ? board.columns * squareId[1] + squareId[0]
 	: squareId;
 
+export const getSquare = (board: Board, squareId: SquareId) => {
+	const index = getIndex(board, squareId);
+	const square = board.squares[index];
+	if (square) return square;
+	throw new Error(`Square ${squareId} does not exist`);
+};
+
 export const movePiece = async (
 	board: Board,
 	from: SquareId,
 	to: SquareId,
 ): Promise<string | null> => {
-	from = getIndex(board, from);
-	to = getIndex(board, to);
-	const fromSquare = board.squares[from];
-	const toSquare = board.squares[to];
+	const fromSquare = getSquare(board, from);
+	const toSquare = getSquare(board, to);
 	const previous = toSquare.piece;
-	toSquare.piece = fromSquare.piece;
-	fromSquare.piece = null;
+	// If to and from are the same square we must not delete the piece!
+	if (toSquare !== fromSquare) {
+		toSquare.piece = fromSquare.piece;
+		fromSquare.piece = null;
+	}
 
 	const promises = [];
 	for (const view of board.views) {
-		promises.push(onMovePiece(view, { from, to }));
+		promises.push(onMovePiece(view, { from: fromSquare, to: toSquare }));
 	}
 	await Promise.all(promises);
 	return previous;
+};
+
+export function* getSquares(board: Board, onlyOccupied = false) {
+	for (const square of board.squares) {
+		if (!onlyOccupied || square.piece) yield(square);
+	}
+}
+
+export const getPiece = (board: Board, squareId: SquareId): string | null => {
+	const index = getIndex(board, squareId);
+	const square = board.squares[index];
+	return square.piece;
 };
 
 /**
@@ -230,6 +243,7 @@ export const setPiece = async (
 export const setPosition = async (
 	board: Board,
 	position: Position | string | true,
+	ignoreMissingPieces = false,
 ): Promise<SVGElement[][]> => {
 	if (!Array.isArray(position)) {
 		position = fenToPosition(position);
@@ -240,7 +254,7 @@ export const setPosition = async (
 	}
 	const promises = [];
 	for (const view of board.views) {
-		promises.push(onSetPosition(view, position));
+		promises.push(onSetPosition(view, position, ignoreMissingPieces));
 	}
 	return Promise.all(promises);
 };

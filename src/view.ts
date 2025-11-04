@@ -1,9 +1,10 @@
-import { sets, type PieceSet, type Pieces } from './piece';
-import { attachView, type Board } from './board';
+import { pieces, setPiece, type PieceSet, type Pieces } from './piece';
+import { attachView, getSquares, type Board } from './board';
 
 import { defaultTheme, type Theme } from './theme';
 import {
 	transformations,
+	transposeCoordinates,
 	type Transformation,
 	type TransformCoordinates,
 	type Coordinates,
@@ -15,6 +16,10 @@ import { s } from './utils';
 export interface View {
 	/** The board to which this view is attached. */
 	board: Board;
+	/** The number of columns (may be transposed from the board). */
+	columns: number;
+	/** The number of rows (may be transposed from the board). */
+	rows: number;
 	/** Colour etc. theme. */
 	theme: Theme;
 	/** SVG elements making up the board. */
@@ -31,6 +36,7 @@ export interface View {
 	scalePawns?: boolean;
 	/** Transformation to apply e.g. rotateR. */
 	transform?: TransformCoordinates;
+	target: HTMLElement | null;
 }
 
 export interface ViewElements {
@@ -62,16 +68,25 @@ export interface ViewDimensions {
 }
 
 export interface CreateViewOptions {
-	theme: Partial<Theme>;
+	theme?: Partial<Theme>;
 	/** Name of piece set to use. */
-	pieces: Pieces;
+	pieces: Pieces | PieceSet;
 	/** Transformation to apply e.g. 'rotateR'. */
 	transform?: Transformation;
+	/** Set to true to show labels in the border if it is shown, otherwise inside
+	 * the cells on left and bottom. Set to 'inside' to show the labels inside
+	 * when there is a border. Note that labels inside cells are not currently
+	 * implemented!
+	 *  */
+	labels?: boolean | 'inside';
+
+	border: boolean | number;
 	/**
 	 * Option to scale pawns so that they look more like pawns which noone but me
 	 * seems to think is a good idea.
 	 */
 	scalePawns?: boolean;
+	target?: string | HTMLElement;
 }
 
 const defaultBorderSizeFactor = 0.5;
@@ -90,24 +105,38 @@ export const createView = (
 	options: Partial<CreateViewOptions> = {},
 ): View => {
 	const settings: CreateViewOptions = {
-		theme: defaultTheme,
 		pieces: 'default',
+		border: false,
 		...options,
 	};
 
-	const theme = { ...defaultTheme, ...settings.theme };
+	let { columns, rows } = board;
+
+	// Apply any transformation.
+	if (settings.transform && settings.transform in transformations) {
+		const xy = [columns, rows] as Coordinates;
+		transposeCoordinates(settings.transform, xy);
+		[columns, rows] = xy;
+	}
+
+	const { border } = settings;
+	const theme =
+		settings.theme ?
+			{ ...defaultTheme, ...settings.theme }
+		:	{ ...defaultTheme };
 	const { size: sq } = theme;
 
-	const borderSize =
-		theme.borderSize === true ? sq * defaultBorderSizeFactor
-		: theme.borderSize ? theme.borderSize
-		: false;
-
-	const bw = borderSize || 0;
+	const bw =
+		border === false || border === 0 ? 0
+		: border === true ?
+			theme.borderSize === true ? sq * defaultBorderSizeFactor
+			: theme.borderSize ? theme.borderSize
+			: sq * defaultBorderSizeFactor
+		:	sq * border;
 
 	// Calculate the width of the board.
-	const vbw = board.columns * sq + 2 * bw;
-	const vbh = board.rows * sq + 2 * bw;
+	const vbw = columns * sq + 2 * bw;
+	const vbh = rows * sq + 2 * bw;
 	const viewBox = `0 0 ${vbw} ${vbh}`;
 	// Calculate an edge.
 	const edgeSize =
@@ -129,34 +158,56 @@ export const createView = (
 	const rootElement = s('svg', { viewBox }) as SVGSVGElement;
 
 	// Get the set of pieces to use.
-	const pieces = sets[settings.pieces];
+	const pieceSet =
+		typeof settings.pieces === 'string' ?
+			pieces[settings.pieces]
+		:	settings.pieces;
 
 	const view: View = {
 		board,
+		columns,
+		rows,
 		theme,
 		dimensions,
 		rootElement,
 		// We haven't set these yet so we need to cooerce.
 		elements: elements as ViewElements,
-		pieces,
+		pieces: pieceSet,
 		scalePawns: settings.scalePawns,
+		target: null,
 	};
 
-	// Apply any transformation.
+	if (settings.target) {
+		// Replace the target element's content with the view.
+		if (typeof settings.target === 'string') {
+			const el = document.querySelector(settings.target) as HTMLElement;
+			if (el) {
+				view.target = el;
+				el.replaceChildren(view.rootElement);
+			}
+		} else {
+			view.target = settings.target;
+			settings.target.replaceChildren(view.rootElement);
+		}
+	}
+
+	// Add a coordinate transform funtion for setting places if we need to.
 	if (settings.transform && settings.transform in transformations) {
 		view.transform = transformations[settings.transform];
 	}
 
-	// Add the border.
-	elements.border = s('path', {
-		fill: theme.border,
-		d: `M0,0H${vbw}V${vbh}H0ZM${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}H${bw}`,
-	});
+	// Add the border if it has non-zero width.
+	if (bw) {
+		elements.border = s('path', {
+			fill: theme.border,
+			d: `M0,0H${vbw}V${vbh}H0ZM${bw},${bw}V${vbh - bw}H${vbw - bw}V${bw}H${bw}`,
+		});
 
-	rootElement.append(elements.border);
+		rootElement.append(elements.border);
+	}
 
 	// Add the squares.
-	const [evenSquares, oddSquares] = drawCheck(board, theme, dimensions);
+	const [evenSquares, oddSquares] = drawCheck(columns, rows, theme, dimensions);
 	elements.evenSquares = evenSquares;
 	rootElement.append(evenSquares);
 	elements.oddSquares = oddSquares;
@@ -172,11 +223,15 @@ export const createView = (
 	});
 	rootElement.append(elements.edge);
 
-	// Add labels.
-	elements.borderLabels = drawBorderLabels(view, theme, dimensions);
-	rootElement.append(elements.borderLabels);
-	elements.cellLabels = drawCellLabels(view, theme, dimensions);
-	rootElement.append(elements.cellLabels);
+	// Add border labels.
+	if ((bw > 0 && settings.labels == null) || settings.labels === true) {
+		elements.borderLabels = drawBorderLabels(view, theme, dimensions);
+		rootElement.append(elements.borderLabels);
+	}
+
+	for (const { index, piece } of getSquares(board, true)) {
+		setPiece(view, { index, piece })
+	}
 
 	attachView(board, view);
 
@@ -184,12 +239,15 @@ export const createView = (
 };
 
 /** Draw the check pattern. */
-const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
-	const { rows, columns } = board;
-
+const drawCheck = (
+	columns: number,
+	rows: number,
+	theme: Theme,
+	dimensions: ViewDimensions,
+) => {
 	// Use the fancy method if we can, it is about a third of the size.
 	if (columns === rows && !(columns % 2)) {
-		return drawEvenCheck(board, theme, dimensions);
+		return drawEvenCheck(columns, rows, theme, dimensions);
 	}
 
 	const { bw, sq } = dimensions;
@@ -222,7 +280,8 @@ const drawCheck = (board: Board, theme: Theme, dimensions: ViewDimensions) => {
 
 /** Draw the check pattern on an even square board. */
 const drawEvenCheck = (
-	board: Board,
+	columns: number,
+	_: number,
 	theme: Theme,
 	dimensions: ViewDimensions,
 ) => {
@@ -238,7 +297,7 @@ const drawEvenCheck = (
 	let i;
 	let x = xw + bw;
 	let y = h - yw;
-	const repeat = Math.floor(board.columns / 2) - 1;
+	const repeat = Math.floor(columns / 2) - 1;
 	parts.push(`M${bw},${bw}H${x}V${h}`);
 	for (i = 0; i < repeat; i++) {
 		x = xw + bw + 2 * xw * (i + 1);
@@ -290,10 +349,6 @@ const drawBorderLabels = (
 	const { transform } = view;
 	const { bw, sq, vbh, vbw } = dimensions;
 
-	// const topLabels = s('g', { 'text-anchor': 'middle' });
-	// const bottomLabels = s('g', { 'text-anchor': 'middle' });
-	// const leftLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
-	// const rightLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
 	const align = {
 		'text-anchor': 'middle',
 		'dominant-baseline': 'middle',
@@ -337,7 +392,7 @@ const drawBorderLabels = (
 	for (let c = 0; c < columns; c++) {
 		const xy = [c, NaN] as Coordinates;
 		if (transform) {
-			transform(wh, xy);
+			transform(xy, wh);
 		}
 		createLabel(xy);
 	}
@@ -345,92 +400,7 @@ const drawBorderLabels = (
 	for (let row = 0; row < rows; row++) {
 		const xy = [NaN, row] as Coordinates;
 		if (transform) {
-			transform(wh, xy);
-		}
-		createLabel(xy);
-	}
-
-	const g = s('g', {
-		'font-family': theme.fontFamily,
-		'font-size': bw * 0.625,
-	});
-	g.append(topLabels, rightLabels, bottomLabels, leftLabels);
-
-	return g;
-};
-
-/**
- * Draw labels in the board's bottom row and left column.
- *
- * @param board
- * @param theme
- * @param dimensions
- * @returns An SVG element containing all the labels.
- */
-const drawCellLabels = (
-	view: View,
-	theme: Theme,
-	dimensions: ViewDimensions,
-): SVGElement => {
-	const { columns, rows, wh, colLabels, rowLabels } = view.board;
-	const { transform } = view;
-	const { bw, sq, vbh, vbw } = dimensions;
-
-	// const topLabels = s('g', { 'text-anchor': 'middle' });
-	// const bottomLabels = s('g', { 'text-anchor': 'middle' });
-	// const leftLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
-	// const rightLabels = s('g', { 'text-anchor': 'left', 'dominant-baseline': 'middle'});
-	const align = {
-		'text-anchor': 'middle',
-		'dominant-baseline': 'middle',
-		fill: theme.borderText,
-	};
-	const topLabels = s('g', align);
-	const bottomLabels = s('g', align);
-	const leftLabels = s('g', align);
-	const rightLabels = s('g', align);
-
-	const yTop = bw * 0.5;
-	const yBottom = vbh - bw * 0.5;
-	const xLeft = bw * 0.5;
-	const xRight = vbw - bw * 0.5;
-
-	const createLabel = (xy: Coordinates) => {
-		const [col, row] = xy;
-
-		if (!isNaN(col)) {
-			const x = bw + sq * (col + 0.5);
-			let text = s('text', { x, y: yTop });
-			text.textContent = colLabels[col];
-			topLabels.append(text);
-			text = s('text', { x, y: yBottom });
-			text.textContent = colLabels[col];
-			bottomLabels.append(text);
-		}
-
-		if (!isNaN(row)) {
-			const y = bw + sq * (row + 0.5);
-			let text = s('text', { x: xLeft, y });
-			text.textContent = rowLabels[row];
-			leftLabels.append(text);
-			text = s('text', { x: xRight, y });
-			text.textContent = rowLabels[row];
-			rightLabels.append(text);
-		}
-	};
-
-	for (let c = 0; c < columns; c++) {
-		const xy = [c, NaN] as Coordinates;
-		if (transform) {
-			transform(wh, xy);
-		}
-		createLabel(xy);
-	}
-
-	for (let row = 0; row < rows; row++) {
-		const xy = [NaN, row] as Coordinates;
-		if (transform) {
-			transform(wh, xy);
+			transform(xy, wh);
 		}
 		createLabel(xy);
 	}
@@ -452,7 +422,7 @@ export const getCoordinates = (view: View, index: number): number[] => {
 	const row = (index - column) / columns;
 	const colRow = [column, row] as Coordinates;
 	if (view.transform) {
-		view.transform(wh, colRow);
+		view.transform(colRow, wh);
 	}
 	const x = bw + sq * colRow[0];
 	const y = bw + sq * colRow[1];

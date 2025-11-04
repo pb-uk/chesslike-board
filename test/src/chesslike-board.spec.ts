@@ -5,6 +5,7 @@ const api = [
 	'createBoard',
 	'createView',
 	'movePiece',
+	'pieces',
 	'setPiece',
 	'setPosition',
 	'version',

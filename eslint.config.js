@@ -10,13 +10,23 @@ export default defineConfig([
 		files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
 		plugins: {
 			js,
-			vitest,
 		},
 		extends: ['js/recommended'],
 		languageOptions: { globals: globals.browser },
+		rules: {},
+	},
+	{
+		files: ['**/*.{spec,test}.{js,mjs,cjs,ts,mts,cts}'],
+		plugins: {
+			vitest,
+		},
 		rules: {
 			...vitest.configs.recommended.rules,
 		},
+	},
+
+	{
+		rules: {},
 	},
 	tseslint.configs.recommended,
 	globalIgnores(['dist']),

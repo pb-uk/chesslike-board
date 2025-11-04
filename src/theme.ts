@@ -17,7 +17,7 @@ export interface Theme {
 	edge: string;
 	/** Font for labels. */
 	fontFamily: string;
-	/** Colours for pieces (only works with uncoloured sets). */
+	/** Colours for pieces (only works with uncoloured pieces). */
 	pieces: Record<string, string>;
 }
 
