@@ -3,9 +3,9 @@ import { getCoordinates, type View } from './view';
 import { type Position, type Square } from './board';
 
 import { default as cburnett } from './pieces/cburnett';
-import { default as fa5Solid } from './pieces/fa-5-solid';
-import { default as fa7Solid } from './pieces/fa-7-solid';
 import { default as fa7 } from './pieces/fa-7';
+import { default as fa7Solid } from './pieces/fa-7-solid';
+// import { default as fa5Solid } from './pieces/fa-5-solid';
 
 /** A piece for use on a board. */
 export interface Piece {
@@ -47,7 +47,7 @@ export const pieces = {
 	cburnett,
 	fa7,
 	fa7Solid,
-	fa5Solid,
+	// fa5Solid,
 };
 
 export type Pieces = keyof typeof pieces;

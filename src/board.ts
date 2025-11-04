@@ -64,6 +64,16 @@ export const attachView = (board: Board, view: View): void => {
 	board.views.push(view);
 };
 
+export const clear = async (board: Board) => {
+	const promises = [];
+	for (const square of board.squares) {
+		if (square.piece) {
+			promises.push(setPiece(board, square.index, null));
+		}
+	}
+	return Promise.all(promises);
+};
+
 /**
  * Create a board.
  *

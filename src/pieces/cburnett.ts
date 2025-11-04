@@ -3,7 +3,7 @@ import { type PieceSet } from '../piece';
 const cburnett: PieceSet = {
 	attribution: {
 		name: 'Colin M.L. Burnett',
-		link: 'https://commons.wikimedia.org/wiki/User:Cburnett',
+		link: 'https://en.wikipedia.org/wiki/User:Cburnett',
 		license: 'CC BY-SA 3.0',
 	},
 

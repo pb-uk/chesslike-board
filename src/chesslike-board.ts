@@ -1,8 +1,9 @@
 /** Package version. */
-export const version = '0.9.0-rc1';
+export const version = '0.9.0';
 
 export {
 	createBoard,
+	clear,
 	getPiece,
 	setPiece,
 	movePiece,

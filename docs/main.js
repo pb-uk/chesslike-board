@@ -1,7 +1,7 @@
-import * as ChesslikeBoard from '../../src/chesslike-board';
+/* global ChesslikeBoard */
 
-async function wait(ms: number) {
-	return new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
+async function wait(ms) {
+	return new Promise((resolve) => setTimeout(() => resolve(), ms));
 }
 
 // Knight's tour ---------------------------------------------------------------
@@ -72,7 +72,7 @@ const transforms = () => {
 	for (const transform of transforms.split(' ')) {
 		createView(board, {
 			target: `#${transform}`,
-			transform: transform as ChesslikeBoard.Transformation,
+			transform: transform,
 		});
 	}
 };
@@ -100,11 +100,7 @@ const foolsMate = async () => {
 // N Queens -----------------------------------------------------------
 const n = 28;
 
-async function nQueensSolve(
-	board: ChesslikeBoard.Board,
-	column = 0,
-	availableRows: number[] = [],
-) {
+async function nQueensSolve(board, column = 0, availableRows = []) {
 	const { setPiece, getPiece } = ChesslikeBoard;
 	let piece = 'wq';
 	if (column === 0) {

@@ -1,6 +1,6 @@
 /*!
- * Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com
- * License - https://fontawesome.com/license/free
+ * Adapted from Font Awesome Free 7.1.0 by @fontawesome https://fontawesome.com
+ * License https://fontawesome.com/license/free [CC-BY-4.0]
  * Copyright 2025 Fonticons, Inc.
  */
 
@@ -8,7 +8,7 @@ import { type PieceSet } from '../piece';
 
 const fa7: PieceSet = {
 	attribution: {
-		name: 'Font Awesome Free v7.1.0',
+		name: 'Font Awesome Free 7.1.0',
 		link: 'https://fontawesome.com',
 		license: 'https://fontawesome.com/license/free',
 		copyright: 'Copyright 2025 Fonticons, Inc.',

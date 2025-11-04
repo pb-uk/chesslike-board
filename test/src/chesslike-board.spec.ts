@@ -2,6 +2,7 @@ import * as ChesslikeBoard from '../../src/chesslike-board';
 import { version as pkgVersion } from '../../package.json';
 
 const api = [
+	'clear',
 	'createBoard',
 	'createView',
 	'getPiece',
