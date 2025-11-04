@@ -1,12 +1,35 @@
-# .prettierignore
+# Build/test files
+coverage
+
+# Package lock files
+package-lock.json
+pnpm-lock.yaml
+
+# Make the type declaration file prettier.
+dist/**/*
+!dist/*.d.ts
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 node_modules
+# dist
+dist-ssr
+*.local
 
-# No point looking at this.
-package-lock.json
-
-# Distribution files.
-dist
-
-# Test reports.
-coverage
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

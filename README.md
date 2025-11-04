@@ -1,72 +1,48 @@
-# chesslike-board
+# Chess-like Board
 
-Presentation layer for chess-like games.
+## Quick start
 
-## Getting Started: in a web page
-
-Current major browsers are supported but not Internet Explorer (edit `targets`
-in `rollup.config.js` and run `npm run build` to change this).
-
-Load the script from the CDN:
+In a browser
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/chesslike-board@0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chesslike-board@0.9"></script>
 ```
 
-The module is exported as `ChesslikeBoard`:
-
-```html
-<script>
-  document.write(ChesslikeBoard.version);
-</script>
-```
-
-## Getting Started: in Node.js
-
-Node >= 10 is currently supported in the distributed modules.
-
-Install from `npm`:
+In a node application
 
 ```console
-$ npm i chesslike-board
+$ npm install chesslike-board@0.9
 ```
 
-Require CommonJS module:
-
-```js
-// Default should work...
-const ChesslikeBoard = require('chesslike-board');
-// ...or specify CommonJS module.
-const ChesslikeBoard = require('chesslike-board/dist/cjs');
+```typescript
+import { createBoard } from 'chesslike-board';
 ```
 
-or import as an ES6 module:
+See https://github.io/pb-uk/chesslike-board for example usage.
 
-```js
-// Default should work...
-import ChesslikeBoard from 'chesslike-board';
-// ...or specify ES6 module.
-import ChesslikeBoard from 'chesslike-board/dist/esm';
-```
+## License
 
-## Using
+Chesslike Board is copyright pb-uk and distributed under the
+[MIT](https://github.com/pb-uk/chesslike-board/blob/main/LICENSE)
+license.
 
-## Documentation
+The default pieces are adapted from the
+['C Burnett' chess pieces](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces)
+created by
+[Colin M.L. Burnett](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces)
+and published on Wikipedia. They are used in Chesslike Board under the
+[Creative Commons Attribution-ShareAlike 3.0 Unported](https://creativecommons.org/licenses/by-sa/3.0/)
+license.
 
-## Contributing
+Font Awesome pieces are adapted from Font Awesome Free 7.1.0 by
+[@fontawesome](https://fontawesome.com)
+copyright 2025 Fonticons, Inc. They are used in Chesslike Board under
+the
+[Creative Commons Attribution 4.0 International](https://fontawesome.com/license/free)
+license.
 
-## Important information
+## See also
 
-Copyright 2021 [pbuk](https://github.com/pbuk-uk/chesslike-board-js)
-and distributed under the MIT License. See [LICENSE] for more information.
-
-Icons included from:
-
-- [Font Awesome](https://fontawesome.com/license/free) license:
-  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
-
-## Contact
-
-Please contact by raising an issue on
-[GitHub](https://github.com/pbuk-uk/chesslike-board-js/issues);
-all comments and suggestions are welcome.
+- https://github.com/shaack/cm-chessboard
+- https://jhlywa.github.io/chess.js/
+- https://chessboardjs.com/

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Chesslike Board</title>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/themes/prism.min.css"
+		/>
+		<style>
+			:root {
+				--sq: 60px; /* Size of a square. */
+			}
+			body {
+				font-family: system-ui, sans-serif;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			p {
+				max-width: 60rem;
+			}
+			code[class*='language-'] {
+				tab-size: 2;
+			}
+		</style>
+	</head>
+	<body class="language-js">
+		<div style="margin: 0 0.5em">
+			<h1>Chesslike board examples</h1>
+		</div>
+
+		<div style="margin: 0 0.5em">
+			<h2>Knight's tour</h2>
+			<p>
+				The motivation behind Chesslike Board is presenting puzzles on a
+				non-standard chess board. Here is a knight's tour on a 3x7 board.
+			</p>
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -0.5em">
+				<div style="width: calc(var(--sq) * 4); margin: 0 0.5em">
+					<div id="knights-tour"></div>
+				</div>
+
+				<div style="width: 44rem; margin: 0 0.5em; flex-grow: 1">
+					<pre
+						style="margin: 0; padding: 0 0.5em"
+					><code>const { createBoard, movePiece, setPiece } = ChesslikeBoard;
+
+const board = createBoard({
+	columns: 3,
+	rows: 7,
+	target: '#knights-tour',
+	view: { border: true },
+});
+
+const moves =
+	'c2 b4 c6 a7 b5 c7 a6 c5 b7 a5 b3 c1 a2 c3 b1 a3 c4 b2 a4 b6'.split(' ');
+while (true) {
+	// Put a white knight in a1.
+	await setPiece(board, 'a1', 'wn');
+	// This doesn't change anything, just pauses for the length of a move.
+	await movePiece(board, 'a1', 'a1');
+	let lastSquare = 'a1';
+	for (const newSquare of moves) {
+		await movePiece(board, lastSquare, newSquare);
+		lastSquare = newSquare;
+	}
+	// Another pause for the length of a move.
+	await movePiece(board, lastSquare, lastSquare);
+	// Remove the knight from its finishing position before starting again.
+	await setPiece(board, lastSquare, null);
+}</code></pre>
+				</div>
+			</div>
+
+			<p>
+				You can create more than one view of a board. This view is linked to the
+				same board and has the rows and columns transposed. This view also uses
+				pieces from a different set.
+			</p>
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -0.5em">
+				<div style="width: calc(var(--sq) * 7); margin: 0 0.5em">
+					<div id="knights-tour-alt"></div>
+				</div>
+				<div style="width: 24rem; margin: 0 0.5em; flex-grow: 1">
+					<pre
+						style="margin: 0; padding: 0 0.5em"
+					><code>const { createView } = ChesslikeBoard;
+
+createView(board, {
+	target: '#knights-tour-alt',
+	transform: 'transpose',
+	pieces: 'fa7',
+});
+</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<div style="margin: 0 0.5em">
+			<h2>Pieces, notation and positions</h2>
+			<p>
+				Pieces can be placed on the board using the notation <code>bk</code> for
+				black king, <code>wn</code> for white knight etc. Alternative sets have
+				disc (<code>bd</code> and <code>wd</code>) and circle (<code>bc</code>
+				and <code>wc</code>) icons. There is no theoretical limit to the size of
+				a board, so for example
+				<code style="white-space: nowrap">setPiece(board, 'cv150', 'wb')</code>
+				will place a white bishop in the top right square of a 100x150 board.
+				You can also place and move pieces using
+				<code style="white-space: nowrap">[column, row]</code> notation e.g.
+				<code style="white-space: nowrap"
+					>setPiece(board, [100, 150], 'wb')</code
+				>.
+			</p>
+
+			<p>
+				The available pieces are shown below, followed by the code to display
+				them. This code illustrates the use of
+				<abbr title="Forsyth-Edwards Notation">FEN</abbr> to set the initial
+				position for a board.
+			</p>
+
+			<p>
+				The default pieces are adapted from the
+				<a
+					target="_blank"
+					href="https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces"
+					>'C Burnett' chess pieces</a
+				>
+				created by
+				<a target="_blank" href="https://en.wikipedia.org/wiki/User:Cburnett"
+					>Colin M.L. Burnett</a
+				>
+				and published on Wikipedia. They are used in Chesslike Board under the
+				<a
+					target="_blank"
+					href="https://creativecommons.org/licenses/by-sa/3.0/"
+					>Creative Commons Attribution-ShareAlike 3.0 Unported</a
+				>
+				license. Font Awesome pieces are adapted from Font Awesome Free 7.1.0 by
+				<a target="_blank" href="https://fontawesome.com">@fontawesome</a>
+				copyright 2025 Fonticons, Inc. They are used in Chesslike Board under
+				the
+				<a target="_blank" href="https://fontawesome.com/license/free"
+					>Creative Commons Attribution 4.0 International</a
+				>
+				license.
+			</p>
+
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -0.5em">
+				<div style="width: calc(var(--sq) * 6); margin: 0 0.5em">
+					<h2>Default pieces</h2>
+					<div id="cburnett"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 8); margin: 0 0.5em">
+					<h2>Font Awesome 7 <code>('fa7')</code> pieces</h2>
+					<div id="fa7" ;></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 8); margin: 0 0.5em">
+					<h2>Font Awesome 7 solid <code>('fas7')</code> pieces</h2>
+					<div id="fas7"></div>
+				</div>
+
+				<div style="width: 34rem; margin: 0 0.5em; flex-grow: 1">
+					<pre
+						style="margin: 0; padding: 0 0.5em"
+					><code>const { createBoard, createView } = ChesslikeBoard;
+
+createBoard({
+	columns: 6,
+	rows: 2,
+	target: '#cburnett',
+	position: 'rnbqkp/RNBQKP',
+});
+
+const board = createBoard({
+	columns: 8,
+	rows: 2,
+	target: '#fa7',
+	view: { pieces: 'fa7' },
+	position: 'rnbqkpdc/RNBQKPDC',
+});
+
+createView(board, { target: '#fas7', pieces: 'fa7Solid' });</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<div style="margin: 0 0.5em">
+			<h2>Transformations</h2>
+			<p>
+				Probably the most useful transformation is <code>'rotate'</code> which
+				displays the board from the other player's point of view. The
+				<code>'transpose'</code> transformation is illustrated above in the
+				knight's tour example and is particularly useful for responsive displays
+				when working with non-square boards. All possible transformations are
+				supported and are demonstrated below, along with the code to generate
+				them.
+			</p>
+
+			<p>
+				Please note that the display of row and column labels in the border does
+				not currently work with transformations: see
+				<a
+					target="_blank"
+					href="https://github.com/pb-uk/chesslike-board/issues/1"
+					>#1</a
+				>.
+			</p>
+
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -0.5em">
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>No transformation</h3>
+					<div id="base"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Rotate 180° <code>'rotate'</code></h3>
+					<div id="rotate"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Transpose <code>'transpose'</code></h3>
+					<div id="transpose"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Flip vertical <code>'flipV'</code></h3>
+					<div id="flipV"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Flip horizontal <code>'flipH'</code></h3>
+					<div id="flipH"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Rotate right <code>'rotateR'</code></h3>
+					<div id="rotateR"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Rotate left <code>'rotateL'</code></h3>
+					<div id="rotateL"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 3); margin: 0 0.5em">
+					<h3>Flip diagonal <code>'flipD'</code></h3>
+					<div id="flipD"></div>
+				</div>
+
+				<div style="width: 34rem; margin: 0 0.5em; flex-grow: 1">
+					<pre
+						style="margin: 0; padding: 0 0.5em"
+					><code>const { createBoard, createView } = ChesslikeBoard;
+
+const transforms = 'rotate transpose flipV flipH rotateR rotateL flipD';
+const position = 'rnb/3/RNB';
+const board = createBoard({ rows: 3, columns: 3, target: '#base', position });
+for (const transform of transforms.split(' ')) {
+	createView(board, {
+		target: `#${transform}`,
+		transform: transform,
+	});
+}</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<div style="margin: 0 0.5em">
+			<h2>N Queens</h2>
+			<p>
+				Presenting solutions to the
+				<a href="https://en.wikipedia.org/wiki/Eight_queens_puzzle">N Queens</a>
+				problem was the original motivation for creating Chesslike Board. The
+				board below finds solutions for
+				<code style="text-wrap: nowrap">n = 28</code>, pausing for five seconds
+				with each solution.
+			</p>
+
+			<div id="n-queens" style="max-width: 75vh"></div>
+		</div>
+
+		<div style="margin: 0 0.5em">
+			<h2>Fool's mate</h2>
+			<p>
+				Chesslike Board can be used to show chess games, although if this is
+				what you want to do other packages offer more features.
+			</p>
+
+			<p>
+				The views from both white and black's point of view below play out the
+				"<a target="_blank" href="https://en.wikipedia.org/wiki/Fool%27s_mate"
+					>fool's mate</a
+				>" game.
+			</p>
+
+			<div style="display: flex; flex-wrap: wrap; margin: 0 -0.5em">
+				<div style="width: calc(var(--sq) * 4); margin: 0 0.5em">
+					<div id="fools-mate"></div>
+				</div>
+
+				<div style="width: calc(var(--sq) * 4); margin: 0 0.5em">
+					<div id="fools-mate-black"></div>
+				</div>
+
+				<div style="width: 46rem; margin: 0 0.5em; flex-grow: 1">
+					<pre
+						style="margin: 0; padding: 0 0.5em"
+					><code>const { createBoard, createView, movePiece, setPosition, clear } = ChesslikeBoard;
+
+const board = createBoard({ target: '#fools-mate' });
+
+createView(board, { target: '#fools-mate-black', transform: 'rotate' });
+
+while (true) {
+	await setPosition(board, true);
+	await wait(2000);
+	await movePiece(board, 'f2', 'f3');
+	await movePiece(board, 'e7', 'e6');
+	await movePiece(board, 'g2', 'g4');
+	await movePiece(board, 'd8', 'h4');
+	await wait(2000);
+	await clear(board);
+}</code></pre>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/chesslike-board@0.9.0-rc2"></script>
+
+		<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/prism.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/prismjs@1.30.0/plugins/autoloader/prism-autoloader.min.js"></script>
+		<script src="./main.js"></script>
+	</body>
+</html>
